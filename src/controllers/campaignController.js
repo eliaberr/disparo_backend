@@ -1,8 +1,7 @@
-// controllers/campaignController.js
 const Campaign = require("../models/Campaign");
 const Contact = require("../models/Contact");
 const Send = require("../services/sendService");
-const Chatwoot = require("../services/chatwootService"); // 🔥 IMPORTAMOS O SERVIÇO AQUI
+const Chatwoot = require("../services/chatwootService"); 
 
 exports.list = async (req, res) => {
   const rows = await Campaign.list(req.user.id);
@@ -19,14 +18,17 @@ exports.getContacts = async (req, res) => {
   }
 };
 
+// Recebe message_b e message_c da requisição e passa para o Model
 exports.create = async (req, res) => {
   try {
-    const { name, message, contacts = [] } = req.body;
+    const { name, message, message_b, message_c, contacts = [] } = req.body;
 
     const campaign = await Campaign.create(
       req.user.id,
       name,
       message,
+      message_b || null, // Se vier vazio salva como nulo
+      message_c || null, // Se vier vazio salva como nulo
       contacts.length
     );
 
@@ -34,7 +36,6 @@ exports.create = async (req, res) => {
 
     await Contact.bulkInsert(c.id, contacts);
 
-    // 🔥 ADICIONADO AQUI: Cria a etiqueta no Chatwoot ao criar a campanha
     console.log(`[Sistema] Criando etiqueta '${name}' no Chatwoot...`);
     await Chatwoot.createLabel(name);
 
@@ -45,22 +46,24 @@ exports.create = async (req, res) => {
   }
 };
 
+// Recebe message_b e message_c da requisição e passa para o Model no update
 exports.update = async (req, res) => {
   try {
-    const { name, message, contacts = [] } = req.body;
+    const { name, message, message_b, message_c, contacts = [] } = req.body;
 
     await Campaign.update(
       req.params.id,
       req.user.id,
       name,
       message,
+      message_b || null,
+      message_c || null,
       contacts.length
     );
 
     await Contact.clear(req.params.id);
     await Contact.bulkInsert(req.params.id, contacts);
 
-    // 🔥 ADICIONADO AQUI: Caso você edite o nome da campanha, garante que a nova etiqueta exista lá também
     await Chatwoot.createLabel(name);
 
     res.json({ ok: true });

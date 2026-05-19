@@ -6,14 +6,15 @@ exports.list = (userId) =>
     [userId]
   );
 
-exports.create = (userId, name, message, total) =>
+// Adicionado messageB e messageC no INSERT
+exports.create = (userId, name, message, messageB, messageC, total) =>
   db.query(
     `
-    INSERT INTO campaigns(user_id, name, message, total, status, sent, errors, updated_at)
-    VALUES($1,$2,$3,$4,'ativa',0,0,NOW())
+    INSERT INTO campaigns(user_id, name, message, message_b, message_c, total, status, sent, errors, updated_at)
+    VALUES($1,$2,$3,$4,$5,$6,'ativa',0,0,NOW())
     RETURNING *
     `,
-    [userId, name, message, total]
+    [userId, name, message, messageB, messageC, total]
   );
 
 exports.remove = (id, userId) =>
@@ -64,19 +65,22 @@ exports.updateTotal = (id, total) =>
     [total, id]
   );
 
-exports.update = (id, userId, name, message, total) =>
+// Adicionado messageB e messageC no UPDATE
+exports.update = (id, userId, name, message, messageB, messageC, total) =>
   db.query(
     `
     UPDATE campaigns
     SET
       name=$1,
       message=$2,
-      total=$3,
+      message_b=$3,
+      message_c=$4,
+      total=$5,
       sent=0,
       errors=0,
       status='ativa (editada)',
       updated_at=NOW()
-    WHERE id=$4 AND user_id=$5
+    WHERE id=$6 AND user_id=$7
     `,
-    [name, message, total, id, userId]
+    [name, message, messageB, messageC, total, id, userId]
   );
