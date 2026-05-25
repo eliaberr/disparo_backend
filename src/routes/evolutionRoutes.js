@@ -3,12 +3,11 @@ const router = express.Router();
 const evolutionController = require('../controllers/evolutionController');
 const authMiddleware = require('../middlewares/auth');
 
-// Endpoint público para receber os dados do QR code escaneado (Sem travar no JWT)
+// Rota pública para a Evolution
 router.post('/webhook', evolutionController.handleWebhook);
 
-// Aplica autenticação apenas para as rotas internas da plataforma
+// Rotas protegidas
 router.use(authMiddleware);
-
 router.get('/instances', evolutionController.list);
 router.post('/instances', evolutionController.create);
 router.get('/instances/connect/:name', evolutionController.connect);
