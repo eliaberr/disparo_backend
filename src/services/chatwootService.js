@@ -10,6 +10,38 @@ const formatLabelName = (name) => {
   return name.replace(/\s+/g, '_').toLowerCase(); 
 };
 
+// 🔥 NOVA FEAT: Cria uma caixa de entrada API automaticamente usando o Token Admin
+exports.createInbox = async (instanceName) => {
+  try {
+    const url = `${process.env.CHATWOOT_URL}/api/v1/accounts/${process.env.CHATWOOT_ACCOUNT_ID}/inboxes`;
+    
+    const payload = {
+      name: instanceName, // Nome da caixa será igual ao da instância
+      channel: {
+        type: "api",
+        webhook_url: "" 
+      }
+    };
+
+    const response = await axios.post(url, payload, {
+      headers: {
+        api_access_token: process.env.CHATWOOT_ADMIN_TOKEN, // Seu token de administrador
+        "Content-Type": "application/json"
+      }
+    });
+
+    console.log(`[Chatwoot] Caixa de entrada '${instanceName}' criada com sucesso!`);
+    
+    return {
+      id: response.data.id,
+      inboxToken: response.data.channel.inbox_token
+    };
+  } catch (err) {
+    console.error("[Chatwoot] Erro ao criar caixa de entrada:", err.response?.data || err.message);
+    throw new Error("Falha ao criar caixa de entrada no Chatwoot");
+  }
+};
+
 exports.createLabel = async (labelName) => {
   const formattedLabel = formatLabelName(labelName);
   try {
@@ -31,7 +63,6 @@ exports.addLabelToContact = async (phoneNumber, labelName, secondLabel) => {
   const formattedLabel1 = formatLabelName(labelName);
   const formattedLabel2 = secondLabel ? formatLabelName(secondLabel) : null;
 
-  // Monta a lista com as etiquetas passadas
   const labelsToSend = formattedLabel2 
     ? [formattedLabel1, formattedLabel2] 
     : [formattedLabel1];
@@ -53,31 +84,27 @@ exports.addLabelToContact = async (phoneNumber, labelName, secondLabel) => {
 
     const contactId = contacts[0].id;
 
-    // 1. Adiciona as etiquetas no Perfil do Contato
     await chatwootAPI.post(`/contacts/${contactId}/labels`, {
       labels: labelsToSend 
     });
     console.log(`[Chatwoot] Etiquetas adicionadas ao CONTATO ${phoneNumber}:`, labelsToSend);
 
-    // 2. Busca persistente da conversa (Aumentado para 5 tentativas)
     let conversations = [];
-    const maxAttempts = 5; // 🔥 Alterado de 3 para 5 conforme solicitado
+    const maxAttempts = 5; 
 
     for (let i = 0; i < maxAttempts; i++) {
       const convRes = await chatwootAPI.get(`/contacts/${contactId}/conversations`);
-      // Buscamos apenas conversas que não estão resolvidas
       conversations = convRes.data.payload.filter(c => c.status !== 'resolved');
 
       if (conversations && conversations.length > 0) break;
 
       console.log(`[Chatwoot] Aguardando criação da conversa para ${phoneNumber} (Tentativa ${i + 1}/${maxAttempts})...`);
-      await new Promise(r => setTimeout(r, 3000)); // Espera 3 segundos entre tentativas
+      await new Promise(r => setTimeout(r, 3000)); 
     }
 
     if (conversations && conversations.length > 0) {
       const convId = conversations[0].id;
       
-      // 3. Adiciona as etiquetas na Conversa
       await chatwootAPI.post(`/conversations/${convId}/labels`, {
         labels: labelsToSend 
       });
