@@ -10,13 +10,14 @@ const formatLabelName = (name) => {
   return name.replace(/\s+/g, '_').toLowerCase(); 
 };
 
+// 🔥 FUNÇÃO CORRIGIDA: Usa inbox_identifier conforme sua API retorna
 exports.createInbox = async (instanceName) => {
   try {
     const url = `${process.env.CHATWOOT_URL}/api/v1/accounts/${process.env.CHATWOOT_ACCOUNT_ID}/inboxes`;
     
     const payload = {
       name: instanceName,
-      channel: { type: "api", webhook_url: "" }
+      channel: { type: "api" }
     };
 
     const response = await axios.post(url, payload, {
@@ -27,9 +28,18 @@ exports.createInbox = async (instanceName) => {
     });
 
     console.log(`[Chatwoot] Caixa de entrada '${instanceName}' criada com sucesso!`);
-    return { id: response.data.id, inboxToken: response.data.channel.inbox_token };
+    
+    // O campo que você identificou no Postman é "inbox_identifier"
+    return { 
+      id: response.data.id, 
+      inboxToken: response.data.inbox_identifier 
+    };
   } catch (err) {
-    console.error("[Chatwoot] Erro ao criar inbox:", err.response?.data || err.message);
+    if (err.response) {
+      console.error("[Chatwoot API ERRO DETALHADO]:", JSON.stringify(err.response.data, null, 2));
+    } else {
+      console.error("[Chatwoot ERRO]:", err.message);
+    }
     throw new Error("Falha ao criar caixa de entrada no Chatwoot");
   }
 };

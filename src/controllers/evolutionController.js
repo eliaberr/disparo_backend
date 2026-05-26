@@ -10,7 +10,7 @@ exports.handleWebhook = async (req, res) => {
     const { event, data } = req.body;
 
     if (event === "CONNECTION_UPDATE" && data.status === "open") {
-      const instanceName = data.instance;
+      const instanceName = data.instance; 
       console.log(`[Webhook] Conectou: ${instanceName}. Provisionando Chatwoot...`);
 
       const inboxData = await ChatwootService.createInbox(instanceName);
