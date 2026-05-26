@@ -16,6 +16,6 @@ exports.token = (user) => {
       email: user.email,
     },
     process.env.JWT_SECRET || "segredo",
-    { expiresIn: "7d" }
+    { expiresIn: "1d" }
   );
 };
