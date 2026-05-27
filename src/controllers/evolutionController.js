@@ -9,11 +9,15 @@ exports.handleWebhook = async (req, res) => {
 
     if (event === "CONNECTION_UPDATE" && data.status === "open") {
       const instanceName = data.instance;
-      console.log(`[Webhook] Conectou: ${instanceName}. Provisionando Chatwoot...`);
+      console.log(
+        `[Webhook] Conectou: ${instanceName}. Provisionando Chatwoot...`,
+      );
 
       // 1. Cria a caixa no Chatwoot
       const inboxData = await ChatwootService.createInbox(instanceName);
-      console.log(`[DEBUG] Inbox criada. Enviando dados para Evolution...`);
+      console.log(
+        `[DEBUG] Inbox criada com sucesso. Token: ${inboxData.inboxToken}`,
+      );
 
       // 2. Configura a integração na Evolution API
       try {
@@ -21,21 +25,34 @@ exports.handleWebhook = async (req, res) => {
           `http://10.10.0.153:8080/chatwoot/set/${instanceName}`,
           {
             enabled: true,
-            accountId: parseInt(process.env.CHATWOOT_ACCOUNT_ID),
-            token: process.env.CHATWOOT_TOKEN, // inbox_identifier
+            accountId: String(process.env.CHATWOOT_ACCOUNT_ID),
+            token: inboxData.inboxToken, // Corrigido: usando o token da caixa criada
             url: process.env.CHATWOOT_URL,
-            signMessage: true,
-            reopenChat: true,
+            signMsg: true, // ✅ Nome correto exigido pela API
+            reopenConversation: true, // ✅ Nome correto exigido pela API
+            conversationPending: true, // ✅ Campo obrigatório que faltava
             importContacts: true,
             importMessages: true,
           },
-          headers
+          headers,
         );
-        console.log(`[Webhook] Integração Evolution respondida:`, evoResponse.data);
-        console.log(`[Webhook] Instância ${instanceName} integrada com sucesso.`);
+        console.log(
+          `[Webhook] Integração Evolution respondida:`,
+          evoResponse.data,
+        );
+        console.log(
+          `[Webhook] Instância ${instanceName} integrada com sucesso.`,
+        );
       } catch (evoErr) {
-        // 🔥 LOG DETALHADO: Se falhar aqui, o terminal vai te contar o motivo real
-        console.error("[ERRO CRÍTICO NA INTEGRAÇÃO EVO]:", evoErr.response?.data || evoErr.message);
+        // Log detalhado para identificar falhas na configuração
+        if (evoErr.response) {
+          console.error(
+            "[ERRO CRÍTICO NA INTEGRAÇÃO EVO]:",
+            JSON.stringify(evoErr.response.data, null, 2),
+          );
+        } else {
+          console.error("[ERRO CRÍTICO NA INTEGRAÇÃO EVO]:", evoErr.message);
+        }
         throw new Error(evoErr);
       }
     }
@@ -54,7 +71,7 @@ exports.list = async (req, res) => {
     );
     res.json(response.data);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao listar" });
+    res.status(500).json({ error: "Erro ao listar instâncias" });
   }
 };
 
@@ -67,7 +84,8 @@ exports.create = async (req, res) => {
     );
     res.json(response.data);
   } catch (err) {
-    res.status(500).json({ err });
+    console.error("[Error Create Instance]:", err.message);
+    res.status(500).json({ error: "Erro ao criar instância" });
   }
 };
 
@@ -79,7 +97,7 @@ exports.connect = async (req, res) => {
     );
     res.json(response.data);
   } catch (err) {
-    res.status(500).json({ error: "Erro ao conectar" });
+    res.status(500).json({ error: "Erro ao conectar instância" });
   }
 };
 
@@ -91,6 +109,6 @@ exports.remove = async (req, res) => {
     );
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: "Erro ao remover" });
+    res.status(500).json({ error: "Erro ao remover instância" });
   }
 };
