@@ -22,7 +22,7 @@ exports.handleWebhook = async (req, res) => {
           {
             enabled: true,
             accountId: parseInt(process.env.CHATWOOT_ACCOUNT_ID),
-            token: inboxData.inboxToken, // inbox_identifier
+            token: process.env.CHATWOOT_TOKEN, // inbox_identifier
             url: process.env.CHATWOOT_URL,
             signMessage: true,
             reopenChat: true,
