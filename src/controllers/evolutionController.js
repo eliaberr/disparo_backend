@@ -18,7 +18,7 @@ exports.handleWebhook = async (req, res) => {
       // 2. Configura a integração na Evolution API
       try {
         const evoResponse = await axios.post(
-          `http://10.10.0.153:3000/chatwoot/set/${instanceName}`,
+          `http://10.10.0.153:8080/chatwoot/set/${instanceName}`,
           {
             enabled: true,
             accountId: parseInt(process.env.CHATWOOT_ACCOUNT_ID),
@@ -36,7 +36,7 @@ exports.handleWebhook = async (req, res) => {
       } catch (evoErr) {
         // 🔥 LOG DETALHADO: Se falhar aqui, o terminal vai te contar o motivo real
         console.error("[ERRO CRÍTICO NA INTEGRAÇÃO EVO]:", evoErr.response?.data || evoErr.message);
-        throw new Error("Falha ao configurar Chatwoot na Evolution API");
+        throw new Error(evoErr);
       }
     }
     return res.status(200).json({ status: "success" });

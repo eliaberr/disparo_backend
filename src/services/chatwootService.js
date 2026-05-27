@@ -22,7 +22,7 @@ exports.createInbox = async (instanceName) => {
 
     const response = await axios.post(url, payload, {
       headers: {
-        api_access_token: process.env.CHATWOOT_ADMIN_TOKEN,
+        api_access_token: process.env.CHATWOOT_TOKEN,
         "Content-Type": "application/json"
       }
     });
@@ -40,7 +40,7 @@ exports.createInbox = async (instanceName) => {
     } else {
       console.error("[Chatwoot ERRO]:", err.message);
     }
-    throw new Error("Falha ao criar caixa de entrada no Chatwoot");
+    throw new Error(err);
   }
 };
 
